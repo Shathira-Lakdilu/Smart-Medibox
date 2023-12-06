@@ -1,0 +1,440 @@
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <DHTesp.h>
+#include <WiFi.h>
+#include <time.h>
+
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_ADDRESS 0x3c ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+
+#define buzzer 5
+#define led_1 15
+#define cancel 34
+#define ok 35
+#define down 32
+#define up 33
+#define dht 12
+
+#define NTP_SERVER     "pool.ntp.org"
+#define UTC_OFFSET     0
+#define UTC_OFFSET_DST 0
+
+//object declaration
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+DHTesp dhtSensor;
+
+//variables
+int days = 0;
+int hours = 0;
+int minutes = 0;
+int seconds = 0;
+
+bool alarm_enabled = true;
+int n_alarms = 2;
+int alarm_hours[] = {0, 0};
+int alarm_minutes[] = {1, 10};
+bool alarm_triggered[] = {false, false};
+
+unsigned long timenow = 0;
+unsigned long timelast = 0;
+
+int n_notes = 8;
+int C = 262;
+int D = 294;
+int E = 330;
+int F = 349;
+int G = 392;
+int A = 440;
+int B = 494;
+int C_H = 523;
+int notes[] = {C, D, E, F, G, A, B, C_H};
+
+int current_mode = 0;
+int max_modes = 4;
+String options[] = {"1-set time", "2-set alarm 1", "3-set alarm 2", "4-disable alarm"};
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(buzzer, OUTPUT);
+  pinMode(led_1, OUTPUT);
+  pinMode(cancel, INPUT);
+  pinMode(ok, INPUT);
+  pinMode(down, INPUT);
+  pinMode(up, INPUT);
+
+  dhtSensor.setup(dht, DHTesp::DHT22);
+
+  WiFi.begin("Wokwi-GUEST", "", 6);
+  while (WiFi.status() != WL_CONNECTED) {
+    display.clearDisplay();
+    print_line("conecting ti wifi", 0, 0, 2);
+    delay(250);
+  }
+
+    display.clearDisplay();
+    print_line("conected ti wifi", 0, 0, 2);
+    delay(250);
+
+    configTime(UTC_OFFSET, UTC_OFFSET_DST, NTP_SERVER);
+
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for (;;); // Don't proceed, loop forever
+  }
+  display.display();
+  delay(2000); // Pause for 2 seconds
+
+  // Clear the buffer
+  display.clearDisplay();
+
+  print_line("welcome to medibox", 20, 20, 2);
+  delay(3000);
+
+
+
+}
+
+void loop() {
+
+  update_time_with_check_alarm();
+
+  if (digitalRead(cancel) == LOW) {
+    delay(1000);
+    go_to_menu();
+    Serial.println("menu");
+  }
+  check_temp();
+
+}
+
+void print_line(String text, int row, int col, int text_size ) {
+
+  display.setTextSize(text_size);             // Normal 1:1 pixel scale
+  display.setTextColor(SSD1306_WHITE);        // Draw white text
+  display.setCursor(col, row);            // Start at top-left corner
+  display.println(text);
+
+  display.display();
+
+}
+
+void print_time_now(void) {
+  print_line(String(days), 0, 0, 2);
+  print_line(":", 0, 20, 2);
+  print_line(String(hours), 0, 30, 2);
+  print_line(":", 0, 50, 2);
+  print_line(String(minutes), 0, 60, 2);
+  print_line(":", 0, 80, 2);
+  print_line(String(seconds), 0, 90, 2);
+
+}
+
+void update_time(void) {
+
+  timenow = millis() / 1000 ; //no of secconds after boot up
+  seconds = timenow - timelast; //no of seconds after last updae time
+
+  if (seconds >= 60) {
+    minutes ++;
+    timelast += 60;
+
+  }
+
+  if (minutes == 60) {
+    minutes = 0 ;
+    hours += 1;
+  }
+
+  if (hours == 24) {
+    hours = 0 ;
+    days += 1;
+  } 
+
+/*
+  //over wifi
+  struct tm timeinfo;
+  getLocalTime(&timeinfo);
+
+  char day_str[8];
+  char hour_str[8];
+  char min_str[8];
+  char sec_str[8];
+  strftime(day_str,8, "%d" , &timeinfo);
+  strftime(sec_str,8, "%S" , &timeinfo);
+  strftime(hour_str,8, "%H" , &timeinfo);
+  strftime(min_str,8, "%M" , &timeinfo);
+
+  hours = atoi(hour_str);
+  minutes = atoi(min_str);
+  days = atoi(day_str);
+  seconds = atoi(sec_str);   */
+}
+
+void ring_alarm(void) {
+  display.clearDisplay();
+  print_line("medicine time !!", 0, 0, 2);
+
+  //light the led
+  digitalWrite(led_1, HIGH);
+
+  //ring the buzzer
+  while (digitalRead(cancel) == HIGH) {
+    for (int i = 0; i < n_notes; i++) {
+      if (digitalRead(cancel) == LOW) {
+        delay(200);
+        break;
+      }
+      tone(buzzer, notes[i]);
+      delay(500);
+      noTone(buzzer);
+      delay(2);
+    }
+  }
+  delay(200);
+
+  //turn off led
+  digitalWrite(led_1, LOW);
+  display.clearDisplay();
+}
+
+void update_time_with_check_alarm(void) {
+
+  display.clearDisplay();
+  update_time();
+  print_time_now();
+
+  //check for alarms
+  if (alarm_enabled == true) {
+    for (int i = 0; i < n_alarms; i++) {
+      if ((alarm_triggered[i]) == false && alarm_hours[i] == hours && alarm_minutes[i] == minutes) {
+        ring_alarm();
+        alarm_triggered[i] = true;
+      }
+    }
+  }
+
+}
+
+int wait_for_button_press(void) {
+  while (true) {
+    if (digitalRead(cancel) == LOW) {
+      delay(200);
+      return cancel;
+    }
+    else if (digitalRead(ok) == LOW) {
+      delay(200);
+      return ok;
+    }
+    else if (digitalRead(down) == LOW) {
+      delay(200);
+      return down;
+    }
+    else if (digitalRead(up) == LOW) {
+      delay(200);
+      return up;
+    }
+  }
+  update_time();
+}
+
+void go_to_menu(void) {
+  while (digitalRead(cancel) == HIGH) {
+    display.clearDisplay();
+    print_line(options[current_mode], 0, 0, 2) ;
+
+    int pressed = wait_for_button_press();
+
+    if (pressed == up) {
+      current_mode ++;
+      current_mode = current_mode % 4;
+      delay(200);
+    }
+
+    else if (pressed == down) {
+      current_mode --;
+      if (current_mode < 0) {
+        current_mode = max_modes - 1;
+      }
+      delay(200);
+    }
+
+    else if (pressed == ok) {
+      Serial.println(current_mode);
+      run_mode(current_mode);
+      delay(200);
+    }
+  }
+}
+
+void run_mode(int mode){
+
+  // Set time
+  int temp_hour = 0;
+  int temp_minute = 0;
+
+  int temp_alarmHour = 0;
+  int temp_alarmMinute = 0;
+
+  if (mode == 0) {
+    //set hour
+    while (digitalRead(cancel) == HIGH) {
+      display.clearDisplay();
+      print_line("enter hour: " + String(temp_hour), 0, 0, 2);
+
+      int pressed = wait_for_button_press();
+
+      if (pressed == up) {
+        temp_hour ++;
+        temp_hour = temp_hour % 24;
+        delay(200);
+      }
+
+      else if (pressed == down) {
+        temp_hour --;
+        if (temp_hour < 0) {
+          temp_hour = 23;
+        }
+        delay(200);
+      }
+
+      else if (pressed == ok) {
+        hours = temp_hour;
+        delay(200);
+        break;
+      }
+    }
+   while (digitalRead(cancel) == HIGH) {
+    //set minute
+    display.clearDisplay();
+    print_line("enter minute: " + String(temp_minute), 0, 0, 2);
+
+    int pressed = wait_for_button_press();
+
+    if (pressed == up) {
+      temp_minute ++;
+      temp_minute = temp_minute % 60;
+      delay(200);
+    }
+
+    else if (pressed == down) {
+      temp_minute --;
+      if (temp_minute < 0) {
+        temp_minute = 59;
+      }
+      delay(200);
+    }
+
+    else if (pressed == ok) {
+      minutes = temp_minute;
+      delay(200);
+      break;
+    }
+   }
+    display.clearDisplay();
+    print_line("Time set", 0, 0, 2);
+    delay(200);
+  }
+
+  //Set alarm
+
+  else if (mode == 1||mode == 2) {
+    //set hour
+    while (digitalRead(cancel) == HIGH) {
+      display.clearDisplay();
+      print_line("enter hour: " + String(temp_alarmHour), 0, 0, 2);
+
+      int pressed = wait_for_button_press();
+
+      if (pressed == up) {
+        temp_alarmHour ++;
+        temp_alarmHour = temp_alarmHour % 24;
+        delay(200);
+      }
+
+      else if (pressed == down) {
+        temp_alarmHour --;
+        if (temp_alarmHour < 0) {
+         temp_alarmHour = 23;
+        }
+        delay(200);
+      }
+
+      else if (pressed == ok) {
+        alarm_hours[mode-1] = temp_alarmHour;
+        delay(200);
+        break;
+      }
+    }
+   while (digitalRead(cancel) == HIGH) {
+    //set minute
+    display.clearDisplay();
+    print_line("enter minute: " + String(temp_alarmMinute), 0, 0, 2);
+
+    int pressed = wait_for_button_press();
+
+    if (pressed == up) {
+      temp_alarmMinute ++;
+      temp_alarmMinute = temp_alarmMinute % 60;
+      delay(200);
+    }
+
+    else if (pressed == down) {
+      temp_alarmMinute --;
+      if (temp_alarmMinute < 0) {
+        temp_alarmMinute = 59;
+      }
+      delay(200);
+    }
+
+    else if (pressed == ok) {
+      alarm_minutes[mode-1] = temp_alarmMinute;
+      delay(200);
+      break;
+    }
+   }
+    display.clearDisplay();
+    print_line("Alarm set", 0, 0, 2);
+    alarm_enabled = true;
+    delay(1000);
+  }
+
+  //disable alarm
+  else if(mode ==3){
+    alarm_enabled =false;
+
+    display.clearDisplay();
+    print_line("Alarm disabled", 0, 0, 2);
+    delay(1000);
+  }
+}
+
+void check_temp(void){
+  TempAndHumidity data = dhtSensor.getTempAndHumidity();
+  bool all_good = true;
+  if(data.temperature > 35){
+    all_good = false;
+    print_line("Temp High", 40 , 0, 1);
+  }
+
+  else if(data.temperature < 25){
+    all_good = false;
+    print_line("Temp Low", 40 , 0, 1);
+  }
+
+  if(data.humidity > 85){
+    all_good = false;
+    print_line("Humid High", 50 , 0, 1);
+  }
+
+  else if(data.humidity < 35){
+    all_good = false;
+    print_line("Humid LOW", 50 , 0, 1);
+  }
+}
