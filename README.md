@@ -73,3 +73,11 @@ This function executes the code specific to the currently selected mode. Dependi
 **9. void check_temp():**
 
 This function utilizes the DHT22 sensor to measure the temperature and humidity within the Medibox. It then compares these values to the pre-configured optimal range.
+
+## Schematic Design
+![schametic](https://github.com/Shathira-Lakdilu/Smart-Medibox/assets/127112210/23a7e37f-f73f-4b3b-a19d-eb8731b10c8d)
+
+## PCB Design
+![PCB](https://github.com/Shathira-Lakdilu/Smart-Medibox/assets/127112210/e9ee38d6-f2cb-46ad-b106-abe445b0bb70)
+![Screenshot_20221223_032322](https://github.com/Shathira-Lakdilu/Smart-Medibox/assets/127112210/afdd79af-faef-4477-9959-998ec7e6dfbd)
+
