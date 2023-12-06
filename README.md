@@ -81,3 +81,9 @@ This function utilizes the DHT22 sensor to measure the temperature and humidity 
 ![PCB](https://github.com/Shathira-Lakdilu/Smart-Medibox/assets/127112210/e9ee38d6-f2cb-46ad-b106-abe445b0bb70)
 ![Screenshot_20221223_032322](https://github.com/Shathira-Lakdilu/Smart-Medibox/assets/127112210/afdd79af-faef-4477-9959-998ec7e6dfbd)
 
+## Additional Resources:
+**Simulation on Wokwi:**  This interactive simulation allows you to experience 
+![medibox wokwi](https://github.com/Shathira-Lakdilu/Smart-Medibox/assets/127112210/e85d6681-5624-4e87-9544-d817fd7cbf44)
+the Smart Medibox's functionality firsthand.
+
+
