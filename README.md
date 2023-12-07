@@ -1,4 +1,4 @@
-# Smart-Medibox
+# 🌟 Smart-Medibox 🌡️💊
 ![SMART MEDIBOX](https://github.com/Shathira-Lakdilu/Smart-Medibox/assets/127112210/4fbc4f7f-0759-4643-ad55-3a0be6399715)
 The Smart Medibox is a revolutionary device designed to help you manage your medications effectively and efficiently. It goes beyond your traditional pill organizer by incorporating intelligent features that remind you to take your medication on time and alert you when the surrounding environment is not optimal for its storage.
 
@@ -20,11 +20,23 @@ Forget the days of missed doses or scrambling to remember what medication you ne
 
 Say goodbye to missed doses and worries about medication spoilage with the Smart Medibox! This innovative device acts as your personal medication assistant, reminding you to take your medication on time and ensuring optimal storage conditions.
 
-### Key functionalities:
--   **Timely medication reminders:** Set alarms for each medication and receive clear audio notifications when it's time to take your dosage.
--   **Environmental monitoring:** Built-in sensors monitor temperature and humidity levels within the Medibox, alerting you with an alarm if they fall outside the recommended range for your medication.
--   **Informative display:** A clear and concise display showcases the current time, date, and upcoming alarm information, ensuring you stay on track.
--   **Simple setup:** Easily set the date and time upon initial use and enjoy the benefits of your Smart Medibox
+## Key Functionalities
+
+### Timely Medication Reminders
+- ⏰ Set alarms for each medication dosage.
+- 🔊 Clear audio notifications alert you when it's time to take your medication.
+
+### Environmental Monitoring
+- 🌡️ Built-in sensors continuously monitor temperature and humidity levels within the Medibox.
+- 🚨 Receive alarms if environmental conditions fall outside the recommended range for medication storage.
+
+### Informative Display
+- 🕒 Display shows the current time and date.
+- 📅 Upcoming alarm information is showcased, helping you stay on track with your medication schedule.
+
+### Simple Setup
+- 🚀 Easy and intuitive setup process.
+- 📆 Quickly set the date and time upon initial use to start enjoying the benefits of your Smart Medibox.
 
 **Smart Medibox Operation Flow Chart:** Navigating Efficient Medication Management
 
