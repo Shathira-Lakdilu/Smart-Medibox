@@ -6,6 +6,8 @@ The Smart Medibox is a revolutionary device designed to help you manage your med
 
 Forget the days of missed doses or scrambling to remember what medication you need to take next. The Smart Medibox features a built-in timer that can be programmed to remind you when it's time to take your medication.
 
+![Screenshot 2023-11-27 152048](https://github.com/Shathira-Lakdilu/Smart-Medibox/assets/127112210/e98262d2-7daf-4c24-abb4-2459724aa8af)
+
 ## Hardware components
 
 - ESP32 Development Board
